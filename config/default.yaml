@@ -1,0 +1,34 @@
+# Literature Paper Breaker - Default Configuration
+# Copy this file to config/local.yaml and customize
+
+# Research settings
+research:
+  depth: standard          # quick, standard, deep
+  max_papers: 50
+  language: en             # en, zh, fr, de, es, ja, ko
+  discipline_type: social_science  # humanities or social_science
+
+# LLM settings
+llm:
+  provider: anthropic      # anthropic or openai
+  model: claude-sonnet-4-20250514  # or gpt-4o, claude-opus-4-20250514, etc.
+  temperature: 0.3
+  max_tokens: 8192
+
+# Data sources to enable
+sources:
+  - openalex               # Free, comprehensive (recommended)
+  - semantic_scholar        # Free, good citation graph
+  - crossref               # Free, DOI resolution
+  # - core                 # Requires API key from core.ac.uk
+  # - ctext                # Chinese classical texts
+
+# Paper output settings
+paper:
+  type: research_article   # research_article, review, essay, commentary
+  target_words: 8000
+  format: markdown         # markdown or latex
+  citation_style: apa      # apa or chicago
+
+# Output directory
+output_dir: output
