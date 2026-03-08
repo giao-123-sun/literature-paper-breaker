@@ -29,6 +29,7 @@ from ..utils.llm import LLMClient, LLMConfig
 from .gap_analyzer import GapAnalyzer
 from .hypothesis_generator import HypothesisGenerator
 from .literature_review import LiteratureReviewer
+from .peer_review import PeerReviewer
 
 logger = logging.getLogger(__name__)
 
@@ -54,6 +55,9 @@ class ResearchConfig:
     enabled_sources: list[str] = field(
         default_factory=lambda: ["openalex", "semantic_scholar", "crossref"]
     )
+    enable_peer_review: bool = False
+    num_reviewers: int = 3
+    review_rounds: int = 1
 
 
 @dataclass
@@ -61,12 +65,13 @@ class ResearchSession:
     """Tracks the state of a research session."""
 
     config: ResearchConfig
-    stage: str = "initialized"  # initialized, reviewing, analyzing, proposing, outlining, writing, complete
+    stage: str = "initialized"  # initialized, reviewing, analyzing, proposing, outlining, writing, peer_reviewing, complete
     review_result: Any = None
     gap_result: Any = None
     proposals: Any = None
     outline: Any = None
     draft: Any = None
+    peer_review_result: Any = None  # ReviewSynthesis from peer review
     errors: list[str] = field(default_factory=list)
 
 
@@ -92,6 +97,7 @@ class ResearchOrchestrator:
         self.hypothesis_gen = HypothesisGenerator(self.llm)
         self.outliner = PaperOutliner(self.llm)
         self.writer = PaperWriter(self.llm)
+        self.peer_reviewer = PeerReviewer(self.llm)
 
     def _init_sources(self) -> AggregatedSource:
         """Initialize configured data sources."""
@@ -157,6 +163,14 @@ class ResearchOrchestrator:
                 progress_callback,
             )
 
+            if self.config.enable_peer_review:
+                await self._run_stage(
+                    "peer_reviewing",
+                    "Simulating peer review...",
+                    self._do_peer_review,
+                    progress_callback,
+                )
+
             self.session.stage = "complete"
             if progress_callback:
                 await progress_callback("complete", "Research pipeline complete!")
@@ -170,6 +184,7 @@ class ResearchOrchestrator:
             raise
         finally:
             await self.sources.close()
+            await self.peer_reviewer.close()
             await self.llm.close()
 
         return self.session
@@ -238,6 +253,38 @@ class ResearchOrchestrator:
             self.session.review_result.papers,
         )
 
+    async def _do_peer_review(self):
+        draft = self.session.draft
+        synthesis, revised_text = await self.peer_reviewer.review_and_revise(
+            draft.full_text,
+            self.config.topic,
+            self.config.discipline,
+            self.session.review_result.papers,
+            num_reviewers=self.config.num_reviewers,
+            max_rounds=self.config.review_rounds,
+        )
+        self.session.peer_review_result = synthesis
+
+        # Update draft with revised text
+        from ..paper_engine.writer import PaperDraft
+        revised_draft = PaperDraft(title=draft.title)
+        revised_draft.references = draft.references
+        revised_draft.full_text = revised_text
+        revised_draft.word_count = len(revised_text.split())
+        # Parse sections from revised markdown
+        current_section = {"title": "Body", "content": "", "level": 2}
+        for line in revised_text.split("\n"):
+            if line.startswith("## "):
+                if current_section["content"].strip():
+                    revised_draft.sections.append(current_section)
+                current_section = {"title": line[3:].strip(), "content": "", "level": 2}
+            else:
+                current_section["content"] += f"\n{line}"
+        if current_section["content"].strip():
+            revised_draft.sections.append(current_section)
+
+        self.session.draft = revised_draft
+
     async def _save_outputs(self):
         """Save all outputs to the output directory."""
         out_dir = Path(self.config.output_dir)
@@ -303,5 +350,39 @@ class ResearchOrchestrator:
 
             with open(out_dir / "references.json", "w", encoding="utf-8") as f:
                 json.dump(draft.references, f, ensure_ascii=False, indent=2)
+
+        # Save peer review report
+        if self.session.peer_review_result:
+            synthesis = self.session.peer_review_result
+            with open(out_dir / "peer_review.md", "w", encoding="utf-8") as f:
+                f.write("# Peer Review Report\n\n")
+                f.write(f"**Average Score:** {synthesis.average_score:.1f}/10\n")
+                f.write(f"**Decision:** {synthesis.consensus_decision}\n\n")
+                f.write("## Meta-Review\n\n")
+                f.write(synthesis.meta_review + "\n\n")
+                f.write("## Key Strengths\n\n")
+                for s in synthesis.key_strengths:
+                    f.write(f"- {s}\n")
+                f.write("\n## Critical Issues\n\n")
+                for issue in synthesis.critical_issues:
+                    f.write(f"- {issue}\n")
+                f.write("\n## Revision Instructions\n\n")
+                f.write(synthesis.revision_instructions + "\n\n")
+                f.write("---\n\n## Individual Reviews\n\n")
+                for i, review in enumerate(synthesis.reviews, 1):
+                    r = review.reviewer
+                    f.write(f"### Reviewer {i}: {r.name}\n")
+                    f.write(f"*{r.affiliation}* | H-index: {r.h_index}\n\n")
+                    f.write(f"**Score:** {review.overall_score:.1f}/10 | **Decision:** {review.decision}\n\n")
+                    for score in review.scores:
+                        f.write(f"- **{score.criterion}:** {score.score}/10 — {score.comment}\n")
+                    f.write(f"\n**Strengths:** {'; '.join(review.strengths)}\n\n")
+                    f.write(f"**Weaknesses:** {'; '.join(review.weaknesses)}\n\n")
+                    f.write(f"**Comments:** {review.detailed_comments}\n\n")
+                    if review.suggestions:
+                        f.write("**Suggestions:**\n")
+                        for s in review.suggestions:
+                            f.write(f"- {s}\n")
+                    f.write("\n")
 
         logger.info(f"Outputs saved to {out_dir}")

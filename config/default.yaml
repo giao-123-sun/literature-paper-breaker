@@ -23,6 +23,12 @@ sources:
   # - core                 # Requires API key from core.ac.uk
   # - ctext                # Chinese classical texts
 
+# Peer review simulation
+peer_review:
+  enabled: false             # Enable simulated peer review after writing
+  num_reviewers: 3           # Number of reviewer personas (real scholars)
+  review_rounds: 1           # Review-revise cycles (1-3 recommended)
+
 # Paper output settings
 paper:
   type: research_article   # research_article, review, essay, commentary

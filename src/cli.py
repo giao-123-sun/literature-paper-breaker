@@ -79,6 +79,9 @@ def main():
     default="openalex,semantic_scholar,crossref",
     help="Comma-separated data sources",
 )
+@click.option("--peer-review/--no-peer-review", default=False, help="Enable simulated peer review")
+@click.option("--reviewers", type=int, default=3, help="Number of peer reviewers (default: 3)")
+@click.option("--review-rounds", type=int, default=1, help="Rounds of review-revise cycles")
 def research(
     topic: str,
     discipline: str,
@@ -95,6 +98,9 @@ def research(
     provider: str,
     model: str | None,
     sources: str,
+    peer_review: bool,
+    reviewers: int,
+    review_rounds: int,
 ):
     """Run the full research pipeline on a topic.
 
@@ -126,6 +132,9 @@ def research(
         llm_provider=provider,
         llm_model=model,
         enabled_sources=sources.split(","),
+        enable_peer_review=peer_review,
+        num_reviewers=reviewers,
+        review_rounds=review_rounds,
     )
 
     # Display config
@@ -139,6 +148,8 @@ def research(
     table.add_row("Max Papers", str(config.max_papers))
     table.add_row("LLM", f"{config.llm_provider}/{config.llm_model}")
     table.add_row("Sources", ", ".join(config.enabled_sources))
+    if peer_review:
+        table.add_row("Peer Review", f"{reviewers} reviewers, {review_rounds} round(s)")
     table.add_row("Output", f"{config.output_dir}/ ({config.output_format})")
     console.print(table)
     console.print()
@@ -150,12 +161,14 @@ async def _run_research(config: ResearchConfig):
     """Run the research pipeline with progress display."""
     orchestrator = ResearchOrchestrator(config)
 
+    total = 6 if config.enable_peer_review else 5
     stage_messages = {
-        "reviewing": "[bold blue]Stage 1/5:[/] Conducting literature review...",
-        "analyzing": "[bold blue]Stage 2/5:[/] Analyzing research gaps...",
-        "proposing": "[bold blue]Stage 3/5:[/] Generating research proposals...",
-        "outlining": "[bold blue]Stage 4/5:[/] Creating paper outline...",
-        "writing": "[bold blue]Stage 5/5:[/] Writing paper draft...",
+        "reviewing": f"[bold blue]Stage 1/{total}:[/] Conducting literature review...",
+        "analyzing": f"[bold blue]Stage 2/{total}:[/] Analyzing research gaps...",
+        "proposing": f"[bold blue]Stage 3/{total}:[/] Generating research proposals...",
+        "outlining": f"[bold blue]Stage 4/{total}:[/] Creating paper outline...",
+        "writing": f"[bold blue]Stage 5/{total}:[/] Writing paper draft...",
+        "peer_reviewing": f"[bold blue]Stage 6/{total}:[/] Simulating peer review...",
         "complete": "[bold green]Pipeline complete![/]",
     }
 
@@ -180,6 +193,12 @@ async def _run_research(config: ResearchConfig):
 
         if session.draft:
             console.print(f"  Paper word count: ~{session.draft.word_count}")
+
+        if session.peer_review_result:
+            pr = session.peer_review_result
+            console.print(f"  Peer review score: {pr.average_score:.1f}/10")
+            console.print(f"  Review decision: {pr.consensus_decision}")
+            console.print(f"  Reviewers: {', '.join(r.reviewer.name for r in pr.reviews)}")
 
         console.print(f"\n  Output saved to: [cyan]{config.output_dir}/[/]")
 
