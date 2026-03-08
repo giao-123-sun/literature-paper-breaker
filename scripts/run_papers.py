@@ -26,14 +26,14 @@ logging.basicConfig(
 )
 logger = logging.getLogger("paper_runner")
 
-# Model strategy for $25 budget:
-# - google/gemini-2.0-flash-001: $0.10/1M input, $0.40/1M output (cheapest, fast)
-# - deepseek/deepseek-chat-v3-0324: $0.27/1M input, $1.10/1M output (good quality/price)
-# - anthropic/claude-sonnet-4: $3/1M input, $15/1M output (highest quality, expensive)
+# Model strategy for $25 budget (updated from OpenRouter research):
+# - deepseek/deepseek-chat (V3.2): $0.24/1M input, $0.38/1M output — BEST value
+# - qwen/qwen-2.5-72b-instruct: $0.04/1M input, $0.10/1M output — cheapest
+# - google/gemini-2.5-flash: $0.30/1M input, $2.50/1M output — avoid (expensive output)
+# - anthropic/claude-sonnet-4: $3/1M input, $15/1M output — highest quality, expensive
 #
-# Strategy: Use deepseek-chat for main writing (good prose, cheap),
-# gemini-flash for structured tasks (gap analysis, outlining),
-# Budget ~$6-8 per paper with peer review = 3 papers in $25
+# Strategy: DeepSeek V3.2 for everything — ~90% of frontier quality at <$0.15/paper
+# Total 3 papers with peer review: well under $1 of the $25 budget
 
 PAPERS = [
     {
@@ -85,7 +85,7 @@ async def run_single_paper(paper_config: dict, paper_num: int, total: int):
         output_format="markdown",
         # OpenRouter with cost-effective model
         llm_provider="openrouter",
-        llm_model="deepseek/deepseek-chat-v3-0324",
+        llm_model="deepseek/deepseek-chat",
         enabled_sources=["openalex", "semantic_scholar", "crossref"],
         enable_peer_review=True,
         num_reviewers=3,
@@ -138,7 +138,7 @@ async def main():
 
     logger.info("Literature Paper Breaker — Production Run")
     logger.info(f"Papers to generate: {len(PAPERS)}")
-    logger.info(f"Model: deepseek/deepseek-chat-v3-0324 via OpenRouter")
+    logger.info(f"Model: deepseek/deepseek-chat (V3.2) via OpenRouter")
     logger.info(f"Budget: $25")
 
     results = []
@@ -156,9 +156,9 @@ async def main():
     total_output = sum(r.get("output_tokens", 0) for r in results)
     total_calls = sum(r.get("api_calls", 0) for r in results)
 
-    # DeepSeek v3 pricing on OpenRouter
-    cost_input = total_input * 0.27 / 1_000_000
-    cost_output = total_output * 1.10 / 1_000_000
+    # DeepSeek V3.2 pricing on OpenRouter
+    cost_input = total_input * 0.24 / 1_000_000
+    cost_output = total_output * 0.38 / 1_000_000
     total_cost = cost_input + cost_output
 
     for r in results:
