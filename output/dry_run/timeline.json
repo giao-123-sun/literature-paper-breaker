@@ -1,0 +1,54 @@
+[
+  {
+    "year": 2024,
+    "count": 3,
+    "key_papers": [
+      {
+        "title": "Algorithmic Gatekeeping and Historical Narratives on Social Media",
+        "authors": [
+          "Liu Wei",
+          "Priya Patel",
+          "Thomas Anderson"
+        ],
+        "citations": 72
+      },
+      {
+        "title": "Digital Transformation and Collective Memory in Online Spaces",
+        "authors": [
+          "Sarah Chen",
+          "Michael Torres"
+        ],
+        "citations": 45
+      },
+      {
+        "title": "Cultural Heritage in the Age of Generative AI",
+        "authors": [
+          "Yuki Tanaka",
+          "Robert Kim"
+        ],
+        "citations": 33
+      }
+    ]
+  },
+  {
+    "year": 2025,
+    "count": 2,
+    "key_papers": [
+      {
+        "title": "AI-Generated Text and the Public Sphere: A Habermasian Analysis",
+        "authors": [
+          "James Wright",
+          "Anna Kovacs"
+        ],
+        "citations": 28
+      },
+      {
+        "title": "The Epistemology of Machine-Generated Knowledge",
+        "authors": [
+          "Maria Gonzalez"
+        ],
+        "citations": 15
+      }
+    ]
+  }
+]
