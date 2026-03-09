@@ -30,6 +30,20 @@ Key principles:
 - Analysis should build toward clear conclusions
 - Conclusions should address "so what?" and "what next?"
 
+CRITICAL — Primary Data Collection Awareness:
+- If the methodology involves human subjects research (surveys, interviews, \
+experiments, questionnaires, user studies, ethnography, etc.), you MUST mark \
+those sections clearly in the outline.
+- For each section, add a key_point entry: "[REQUIRES_HUMAN_DATA_COLLECTION]" \
+if the section's content depends on data that must be collected from real \
+human participants.
+- Structure the paper so that sections requiring uncollected primary data are \
+written as PROPOSED METHODOLOGY / RESEARCH PROTOCOL, NOT as completed research.
+- Sections based on computational analysis of existing texts, literature \
+review, or theoretical argument can be written as completed research.
+- In the section description, explicitly state whether the section should be \
+written as "completed research" or "proposed research protocol".
+
 Respond in the same language as the research topic."""
 
 

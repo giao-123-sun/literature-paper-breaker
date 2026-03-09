@@ -33,6 +33,29 @@ Rules:
 - Show, don't just tell - use evidence and examples.
 - Acknowledge counter-arguments and limitations.
 
+CRITICAL — Data Integrity Rules (NEVER violate these):
+- NEVER fabricate empirical data, statistics, percentages, p-values, or \
+quantitative results. If a methodology section describes data collection \
+(surveys, interviews, experiments, questionnaires, user studies, etc.) that \
+has NOT actually been conducted, you MUST NOT invent results for it.
+- NEVER fabricate participant quotes, respondent IDs, or interview excerpts.
+- NEVER present hypothetical or planned research as if it has been completed.
+- For sections that require primary data collection (human subjects research, \
+surveys, interviews, field studies, experiments), write them as a RESEARCH \
+PROTOCOL or PROPOSED METHODOLOGY — clearly framed in future tense, describing \
+what WILL be done, not what WAS done. Use language like "This phase will \
+involve...", "Data will be collected...", "We propose to interview...".
+- If the outline includes an analysis/results section that depends on \
+uncollected primary data, write it as "Expected Analysis Approach" or \
+"Proposed Analytical Framework", describing the planned analytical methods \
+without fabricating outcomes.
+- You MAY present illustrative examples clearly marked as hypothetical: \
+"For instance, one might expect to find..." or "A hypothetical outcome \
+could be...". Always label these explicitly.
+- Computational analyses that can be performed on existing/generated text \
+corpora (e.g., NLP analysis of LLM outputs) ARE acceptable to describe as \
+completed, since those can be executed programmatically.
+
 Write in the same language as the outline and topic."""
 
 
@@ -200,8 +223,15 @@ Available references for this section:
 
 {"Previous sections (for context/continuity):" + context[-3000:] if context else "This is the first section."}
 
+IMPORTANT: If any key point contains "[REQUIRES_HUMAN_DATA_COLLECTION]", this \
+section depends on data from real human participants that has NOT been collected. \
+Write this section as a RESEARCH PROTOCOL or PROPOSED METHODOLOGY in future \
+tense. Do NOT fabricate results, statistics, participant quotes, or data. \
+Instead describe what WILL be done and what analytical approach WILL be used.
+
 Write this section now. Use proper academic prose with in-text citations [AuthorYear].
-Only cite papers from the provided references. Build a coherent argument."""
+Only cite papers from the provided references. Build a coherent argument.
+Never fabricate empirical data, percentages, p-values, or participant quotes."""
 
         content = await self.llm.generate(
             prompt,
@@ -249,7 +279,11 @@ References:
 Context from parent section:
 {context[-2000:]}
 
-Write this subsection with academic rigor and proper citations."""
+IMPORTANT: If any key point contains "[REQUIRES_HUMAN_DATA_COLLECTION]", \
+write as proposed methodology in future tense. NEVER fabricate data or quotes.
+
+Write this subsection with academic rigor and proper citations.
+Never fabricate empirical data, percentages, p-values, or participant quotes."""
 
         return await self.llm.generate(
             prompt,
@@ -270,7 +304,13 @@ Feedback for revision:
 
 Please revise the paper addressing all feedback points.
 Maintain the same structure but improve the content as directed.
-Keep all existing valid citations."""
+Keep all existing valid citations.
+
+CRITICAL: During revision, do NOT introduce fabricated empirical data, \
+statistics, participant quotes, or survey results. If sections describe \
+proposed/planned human subjects research, keep them in future tense as \
+research protocols. Never convert proposed research into fake completed \
+research."""
 
         revised_text = await self.llm.generate(
             prompt, system=SYSTEM_PROMPT, max_tokens=16384
