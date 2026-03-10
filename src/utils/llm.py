@@ -1,6 +1,11 @@
 """LLM provider abstraction layer.
 
 Supports Anthropic Claude, OpenAI, and OpenRouter (OpenAI-compatible).
+
+Multi-model strategy via OpenRouter:
+- Primary (deepseek/deepseek-chat): Core writing tasks
+- Lite (google/gemini-3.1-flash-lite-preview): Simple classification, extraction, formatting
+- Image (google/gemini-3.1-flash-image-preview): Image generation (Nano Banana 2)
 """
 
 from __future__ import annotations
@@ -11,6 +16,13 @@ from dataclasses import dataclass, field
 from typing import Any
 
 logger = logging.getLogger(__name__)
+
+# Model presets for multi-model strategy
+MODEL_PRESETS = {
+    "primary": "deepseek/deepseek-chat",
+    "lite": "google/gemini-3.1-flash-lite-preview",
+    "image": "google/gemini-3.1-flash-image-preview",
+}
 
 
 @dataclass
@@ -35,6 +47,26 @@ class LLMConfig:
 
         if self.provider == "openrouter" and not self.base_url:
             self.base_url = "https://openrouter.ai/api/v1"
+
+    @classmethod
+    def for_lite_tasks(cls) -> LLMConfig:
+        """Create config for cheap, simple tasks using Gemini Flash Lite."""
+        return cls(
+            provider="openrouter",
+            model=MODEL_PRESETS["lite"],
+            max_tokens=500,
+            temperature=0.1,
+        )
+
+    @classmethod
+    def for_image_generation(cls) -> LLMConfig:
+        """Create config for image generation using Gemini Flash Image."""
+        return cls(
+            provider="openrouter",
+            model=MODEL_PRESETS["image"],
+            max_tokens=4096,
+            temperature=0.7,
+        )
 
 
 @dataclass

@@ -10,10 +10,20 @@ research:
 
 # LLM settings
 llm:
-  provider: anthropic      # anthropic or openai
-  model: claude-sonnet-4-20250514  # or gpt-4o, claude-opus-4-20250514, etc.
+  provider: anthropic      # anthropic, openai, or openrouter
+  model: claude-sonnet-4-20250514  # or gpt-4o, deepseek/deepseek-chat, etc.
   temperature: 0.3
   max_tokens: 8192
+
+# Multi-model strategy (for OpenRouter)
+# Use different models for different task tiers:
+#   - primary: core writing tasks (literature review, paper writing, peer review)
+#   - lite: simple tasks (classification, keyword extraction, formatting)
+#   - image: image generation (pipeline diagrams, infographics, social media)
+models:
+  primary: deepseek/deepseek-chat              # Best value: ~$0.05/paper
+  lite: google/gemini-3.1-flash-lite-preview   # Cheapest: classification, summaries
+  image: google/gemini-3.1-flash-image-preview # Nano Banana 2: Pro-level image gen
 
 # Data sources to enable
 sources:
